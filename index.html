@@ -1,0 +1,66 @@
+ <html>
+<body>
+<!-- Se carga el JS de la class ONNX -->
+<script src="https://cdn.jsdelivr.net/npm/onnxjs/dist/onnx.min.js"></script>
+<!-- script src="onnx.min.js"></script -->
+
+<script>
+// Clase Modelo utilizada para cargar modelo ONNX y ejecutar
+class Modelo{
+
+constructor() {
+ this.sess = new onnx.InferenceSession()
+}
+
+async load(modelo) {
+ await this.sess.loadModel(modelo)
+
+ this.inputName = this.sess.session._model._graph._allInputNames
+ this.inputType = this.sess.session._model._graph._allData[0].type.tensorType
+ this.inputDim  = this.sess.session._model._graph._allData[0].type.shape.dims
+
+ console.log('inputName:', this.inputName)
+ console.log('inputType:', this.inputType)
+ console.log('inputDim:', this.inputDim)
+}
+
+async run(datos) {
+//datos = [1.33]
+// let input = new onnx.Tensor(new Float32Array(datos), 'float32', [1,1])
+ let input = new onnx.Tensor(new Float32Array(datos), this.inputType, this.inputDim)
+ this.inputTensor = input
+
+ this.outputMap = await this.sess.run([input])
+ this.outputTensor = this.outputMap.values().next().value
+ console.log('Tensor salida:',  this.outputTensor.data[0])
+}
+
+}
+
+
+// Se crea el objeto modelo
+modelo = new Modelo();
+
+// Se carga el modelo desde archivo onnx
+file='./custominverse.onnx.jpg';
+modelo.load(file);
+
+// Espera que el modelo este cargado para seguir
+console.log('modelo_cargado:', modelo.sess.session._initialized);
+
+// Se ejecuta el modelo con los parametros de entrada solo si ya se ha inicializado
+setTimeout(()=>{ // espera un segundo
+  if(modelo.sess.session._initialized){
+     datos = [1.2];
+     modelo.run(datos);
+
+   // Se imprimen los resultados de prediccion y los parametros utilizados
+   console.log('inputTensor:', modelo.inputTensor);
+   console.log('outputTensor:', modelo.outputTensor);
+   console.log('outMap:', modelo.outputMap);
+  }
+}, 1000); // espera un segundo
+ </script>
+
+</body>
+</html>
